@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Чек-лист UPT — LIME</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0e0e0e;
+    --white: #f9f7f3;
+    --gold: #d4a843;
+    --gold-light: #f5e6b8;
+    --gold-dim: rgba(212,168,67,0.12);
+    --green: #2e7d5a;
+    --green-light: #e6f4ed;
+    --border: #e2ddd4;
+    --text: #1a1a1a;
+    --muted: #888;
+    --card: #ffffff;
+    --section-bg: #f3f0ea;
+    --tag-rfid-bg: #fdf6e3; --tag-rfid: #9a6f00;
+    --tag-vynos-bg: #fdedf0; --tag-vynos: #b02040;
+    --tag-zona-bg: #eaf4ee; --tag-zona: #276645;
+    --tag-komanda-bg: #e8f0fd; --tag-komanda: #1a4fa0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Manrope', sans-serif;
+    background: var(--white);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--black);
+    color: #fff;
+    padding: 28px 20px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 2.5px solid var(--gold);
+  }
+
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 18px;
+  }
+
+  .brand {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    color: var(--gold);
+    font-weight: 700;
+    margin-bottom: 5px;
+  }
+
+  .title {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 20px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  .progress-wrap { text-align: right; }
+
+  .progress-pct {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 34px;
+    font-weight: 900;
+    color: var(--gold);
+    line-height: 1;
+    letter-spacing: -0.04em;
+    transition: color 0.4s;
+  }
+
+  .progress-pct.done { color: #4caf7d; }
+
+  .progress-sub {
+    font-size: 10px;
+    color: #777;
+    margin-top: 2px;
+    letter-spacing: 0.04em;
+  }
+
+  .progress-bar-track {
+    height: 3px;
+    background: #2a2a2a;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 2px;
+    transition: width 0.4s ease, background 0.4s;
+  }
+
+  .progress-bar-fill.done { background: #4caf7d; }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    gap: 6px;
+    padding-bottom: 14px;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 8px 4px;
+    background: #1c1c1c;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .tab.active-before { background: var(--gold); }
+  .tab.active-opening { background: #c0392b; }
+  .tab.active-day { background: #0f9b8e; }
+
+  .tab-label {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 7.5px;
+    letter-spacing: 0.1em;
+    color: #666;
+    font-weight: 700;
+  }
+
+  .tab.active-before .tab-label,
+  .tab.active-opening .tab-label,
+  .tab.active-day .tab-label { color: rgba(0,0,0,0.6); }
+
+  .tab-count {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 14px;
+    font-weight: 900;
+    color: #fff;
+    margin-top: 3px;
+  }
+
+  .tab.active-before .tab-count,
+  .tab.active-opening .tab-count,
+  .tab.active-day .tab-count { color: rgba(0,0,0,0.75); }
+
+  /* ── MAIN CONTENT ── */
+  .main { padding: 16px 16px 40px; }
+
+  /* ── META FORM ── */
+  .meta-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 18px;
+  }
+
+  .meta-title {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .meta-field { display: flex; flex-direction: column; gap: 4px; }
+  .meta-field.full { grid-column: 1 / -1; }
+
+  .meta-field label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .meta-field input {
+    border: 1.5px solid var(--border);
+    border-radius: 7px;
+    padding: 9px 11px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    background: var(--white);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .meta-field input:focus { border-color: var(--gold); }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 8.5px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    font-weight: 700;
+    margin: 20px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── ITEM CARD ── */
+  .item-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 13px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .item-card.checked {
+    background: #f2fbf6;
+    border-color: #a5d6b5;
+  }
+
+  .item-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 14px 12px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .checkbox {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 2px solid #d0ccc4;
+    background: transparent;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    margin-top: 1px;
+  }
+
+  .item-card.checked .checkbox {
+    background: var(--green);
+    border-color: var(--green);
+  }
+
+  .checkbox svg { display: none; }
+  .item-card.checked .checkbox svg { display: block; }
+
+  .item-body { flex: 1; min-width: 0; }
+
+  .item-text {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.45;
+    color: var(--text);
+    transition: color 0.2s;
+  }
+
+  .item-card.checked .item-text {
+    color: #999;
+    text-decoration: line-through;
+    text-decoration-color: #bbb;
+  }
+
+  .item-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 7px;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+
+  .tag-rfid    { background: var(--tag-rfid-bg);    color: var(--tag-rfid); }
+  .tag-vynos   { background: var(--tag-vynos-bg);   color: var(--tag-vynos); }
+  .tag-zona    { background: var(--tag-zona-bg);     color: var(--tag-zona); }
+  .tag-komanda { background: var(--tag-komanda-bg);  color: var(--tag-komanda); }
+
+  .item-num {
+    font-size: 10px;
+    font-weight: 700;
+    color: #d0ccc4;
+    margin-left: auto;
+  }
+
+  /* ── COMMENT ── */
+  .comment-wrap {
+    padding: 0 14px 12px 50px;
+  }
+
+  .comment-input {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 7px;
+    padding: 8px 11px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 12px;
+    color: var(--text);
+    background: var(--white);
+    resize: none;
+    outline: none;
+    min-height: 36px;
+    transition: border-color 0.2s, min-height 0.2s;
+    line-height: 1.5;
+  }
+
+  .comment-input:focus {
+    border-color: var(--gold);
+    min-height: 64px;
+  }
+
+  .comment-input::placeholder { color: #bbb; font-size: 12px; }
+
+  /* ── OPEN ITEMS ── */
+  .open-section {
+    margin-top: 28px;
+    background: #fff8ec;
+    border: 1.5px solid #e8c87a;
+    border-radius: 14px;
+    padding: 18px;
+  }
+
+  .open-title {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    color: #9a6f00;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  .open-item {
+    display: flex;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0e4b8;
+    font-size: 13px;
+    color: #6b4c00;
+    line-height: 1.4;
+  }
+
+  .open-item:last-child { border-bottom: none; }
+
+  .open-item-num {
+    font-weight: 700;
+    color: #b8940b;
+    flex-shrink: 0;
+    width: 20px;
+  }
+
+  .open-empty {
+    font-size: 13px;
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  /* ── COPY BUTTON ── */
+  .copy-btn {
+    display: block;
+    width: 100%;
+    margin-top: 16px;
+    padding: 15px;
+    background: var(--black);
+    color: var(--gold);
+    border: none;
+    border-radius: 10px;
+    font-family: 'Unbounded', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  .copy-btn:active { transform: scale(0.98); }
+  .copy-btn.copied { background: var(--green); color: #fff; }
+
+  /* ── RESET ── */
+  .reset-btn {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    background: transparent;
+    color: #bbb;
+    border: 1.5px solid #e0dbd0;
+    border-radius: 10px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .reset-btn:active { background: #f5f0e8; }
+
+  /* ── HIDDEN SECTION ── */
+  .section-content { display: none; }
+  .section-content.active { display: block; }
+
+  @media (min-width: 600px) {
+    .header { padding: 32px 32px 0; }
+    .main { padding: 24px 32px 60px; max-width: 640px; margin: 0 auto; }
+    .title { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="brand">LIME</div>
+      <div class="title">Чек-лист UPT</div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-pct" id="pctDisplay">0%</div>
+      <div class="progress-sub" id="pctSub">0/13 пунктов</div>
+    </div>
+  </div>
+  <div class="progress-bar-track">
+    <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+  </div>
+  <div class="tabs">
+    <button class="tab active-before" onclick="switchTab('before')" id="tab-before">
+      <div class="tab-label">ДО ОТКРЫТИЯ</div>
+      <div class="tab-count" id="count-before">0/9</div>
+    </button>
+    <button class="tab" onclick="switchTab('opening')" id="tab-opening">
+      <div class="tab-label">ОТКРЫТИЕ</div>
+      <div class="tab-count" id="count-opening">0/2</div>
+    </button>
+    <button class="tab" onclick="switchTab('day')" id="tab-day">
+      <div class="tab-label">В ТЕЧЕНИЕ ДНЯ</div>
+      <div class="tab-count" id="count-day">0/2</div>
+    </button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- META -->
+  <div class="meta-card">
+    <div class="meta-title">ОБЩИЕ ДАННЫЕ</div>
+    <div class="meta-grid">
+      <div class="meta-field">
+        <label>Магазин</label>
+        <input type="text" id="meta-store" placeholder="Напр. LIME Невский" oninput="saveMeta()">
+      </div>
+      <div class="meta-field">
+        <label>Дата</label>
+        <input type="date" id="meta-date" oninput="saveMeta()">
+      </div>
+      <div class="meta-field">
+        <label>Ответственный</label>
+        <input type="text" id="meta-person" placeholder="Имя сотрудника" oninput="saveMeta()">
+      </div>
+      <div class="meta-field">
+        <label>Зона проверки</label>
+        <input type="text" id="meta-zone" placeholder="Напр. Аксессуары 1Ф" oninput="saveMeta()">
+      </div>
+    </div>
+  </div>
+
+  <!-- BEFORE SECTION -->
+  <div class="section-content active" id="section-before">
+    <div class="section-label">RFID / АНАЛИТИКА</div>
+
+    <div class="item-card" id="card-1">
+      <div class="item-top" onclick="toggleItem(1)">
+        <div class="checkbox"><svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Проверка реф значений — RFID аналитика утром, мониторинг остатков и приоритетов</div>
+          <div class="item-footer"><span class="tag tag-rfid">RFID</span><span class="item-num">01</span></div>
+        </div>
+      </div>
+      <div class="comment-wrap"><textarea class="comment-input" placeholder="Комментарий..." oninput="saveComment(1, this.value)" id="comment-1" rows="1"></textarea></div>
+    </div>
+
+    <div class="item-card" id="card-2">
+      <div class="item-top" onclick="toggleItem(2)">
+        <div class="checkbox"><svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Проверка расхождения RFID-остатков и фактического наличия в зале</div>
+          <div class="item-footer"><span class="tag tag-rfid">RFID</span><span class="item-num">02</span></div>
+        </div>
+      </div>
+      <div class="comment-wrap"><textarea class="comment-input" placeholder="Комментарий..." oninput="saveComment(2, this.value)" id="comment-2" rows="1"></textarea></div>
+    </div>
+
+    <div class="section-label">ВЫНОС</div>
+
+    <div class="item-card" id="card-3">
+      <div class="item-top" onclick="toggleItem(3)">
+        <div class="checkbox"><svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Топ артикулы по UPT прошлой недели — подготовлен доп вынос быстрого подсорта</div>
+          <div class="item-footer"><span class="tag tag-vynos">ВЫНОС</span><span class="item-num">03</span></div>
+        </div>
+      </div>
+      <div class="comment-wrap"><textarea class="comment-input" placeholder="Комментарий..." oninput="saveComment(3, this.value)" id="comment-3" rows="1"></textarea></div>
+    </div>
+
+    <div class="section-label">ТОРГОВЫЙ ЗАЛ</div>
+
+    <div class="item-card" id="card-4">
+      <div class="item-top" onclick="toggleItem(4)">
+        <div class="checkbox"><svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Визуальное пополнение аксессуаров в торговом зале</div>
+          <div class="item-footer"><span class="tag tag-zona">ЗОНА</span><span class="item-num">04</span></div>
+        </div>
+      </div>
+      <div class="comment-wrap"><textarea class="comment-input" placeholder="Комментарий..." oninput="saveComment(4, this.value)" id="comment-4" rows="1"></textarea></div>
+    </div>
+
+    <div class="item-card" id="card-5">
+      <div class="item-top" onclick="toggleItem(5)">
+        <div class="checkbox"><svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Все зоны (тотал луки, имидж) заполнены и выровнены</div>
+          <div class="item-footer"><span class="tag tag-zona">ЗОНА</span><span class="item-num">05</span></div>
+        </div>
+      </div>
+      <div class="comment-wrap"><textarea class="comment-input" placeholder="Комментарий..." oninput="saveComment(5, this.value)" id="comment-5" rows="1"></textarea></div>
+    </div>
+
+    <div class="item-card" id="card-6">
+      <div class="item-top" onclick="toggleItem(6)">
+        <div class="checkbox"><svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Манекены / имидж-зоны укомплектованы аксессуарами согласно луку</div>
+          <div class="item-footer"><span class="tag tag-zona">ЗОНА</span><span class="item-num">06</span></div>
+        </div>
+      </div>
+      <div class="comment-wrap"><textarea class="comment-input" placeholder="Комментарий..." oninput="saveComment(6, this.value)" id="comment-6" rows="1"></textarea></div>
+    </div>
+
+    <div class="item-card" id="card-7">
+      <div class="item-top" onclick="toggleItem(7)">
+        <div class="checkbox"><svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Визуальная проверка вынесенного подсорта — расхождения отработаны, подсорт вынесен, зал пополнен</div>
+          <div class="item-footer"><span class="tag tag-zona">ЗОНА</span><span class="item-num">07</span></div>
+        </div>
+      </div>
+      <div class="comment-wrap"><textarea class="comment-input" placeholder="Комментарий..." oninput="saveComment(7, this.value)" id="comment-7" rows="1"></textarea></div>
+    </div>
+
+    <div class="item-card" id="card-8">
+      <div class="item-top" onclick="toggleItem(8)">
+        <div class="checkbox"><svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Имидж луки — актуальность и полнота</div>
+          <div class="item-footer"><span class="tag tag-zona">ЗОНА</span><span class="item-num">08</span></div>
+        </div>
+      </div>
+      <div class="comment-wrap"><textarea class="comment-input" placeholder="Комментарий..." oninput="saveComment(8, this.value)" id="comment-8" rows="1"></textarea></div>
+    </div>
+
+    <div class="item-card" id="card-9">
+      <div class="item-top" onclick="toggleItem(9)">
+        <div class="checkbox"><svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Шайн аксы — привязка к основным категориям</div>
+          <div class="item-footer"><span class="tag tag-zona">ЗОНА</span><span class="item-num">09</span></div>
+        </div>
+      </div>
+      <div class="comment-wrap"><textarea class="comment-input" placeholder="Комментарий..." oninput="saveComment(9, this.value)" id="comment-9" rows="1"></textarea></div>
+    </div>
+  </div>
+
+  <!-- OPENING SECTION -->
+  <div class="section-content" id="section-opening">
+    <div class="section-label">КОМАНДА</div>
+
+    <div class="item-card" id="card-10">
+      <div class="item-top" onclick="toggleItem(10)">
+        <div class="checkbox"><svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Утренний бриф: топ-3 артикула дня для допродажи — все сотрудники проинформированы</div>
+          <div class="item-footer"><span class="tag tag-komanda">КОМАНДА</span><span class="item-num">10</span></div>
+        </div>
+      </div>
+      <div class="comment-wrap"><textarea class="comment-input" placeholder="Комментарий..." oninput="saveComment(10, this.value)" id="comment-10" rows="1"></textarea></div>
+    </div>
+
+    <div class="item-card" id="card-11">
+      <div class="item-top" onclick="toggleItem(11)">
+        <div class="checkbox"><svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Обучение сотрудников: знание актуального лука (с чем носить конкретный аксессуар)</div>
+          <div class="item-footer"><span class="tag tag-komanda">КОМАНДА</span><span class="item-num">11</span></div>
+        </div>
+      </div>
+      <div class="comment-wrap"><textarea class="comment-input" placeholder="Комментарий..." oninput="saveComment(11, this.value)" id="comment-11" rows="1"></textarea></div>
+    </div>
+  </div>
+
+  <!-- DAY SECTION -->
+  <div class="section-content" id="section-day">
+    <div class="section-label">КОНТРОЛЬ</div>
+
+    <div class="item-card" id="card-12">
+      <div class="item-top" onclick="toggleItem(12)">
+        <div class="checkbox"><svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Визуальное пополнение аксессуаров после пиковых часов</div>
+          <div class="item-footer"><span class="tag tag-zona">ЗОНА</span><span class="item-num">12</span></div>
+        </div>
+      </div>
+      <div class="comment-wrap"><textarea class="comment-input" placeholder="Комментарий..." oninput="saveComment(12, this.value)" id="comment-12" rows="1"></textarea></div>
+    </div>
+
+    <div class="item-card" id="card-13">
+      <div class="item-top" onclick="toggleItem(13)">
+        <div class="checkbox"><svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Повторная проверка RFID после трафика — контроль расхождений</div>
+          <div class="item-footer"><span class="tag tag-rfid">RFID</span><span class="item-num">13</span></div>
+        </div>
+      </div>
+      <div class="comment-wrap"><textarea class="comment-input" placeholder="Комментарий..." oninput="saveComment(13, this.value)" id="comment-13" rows="1"></textarea></div>
+    </div>
+  </div>
+
+  <!-- OPEN ITEMS -->
+  <div class="open-section">
+    <div class="open-title">НЕЗАКРЫТЫЕ ПУНКТЫ</div>
+    <div id="openList"><div class="open-empty">✓ Все пункты выполнены</div></div>
+  </div>
+
+  <!-- COPY BUTTON -->
+  <button class="copy-btn" id="copyBtn" onclick="copyReport()">📋 СКОПИРОВАТЬ ИТОГОВЫЙ ОТЧЁТ</button>
+
+  <!-- RESET -->
+  <button class="reset-btn" onclick="resetAll()">Сбросить весь день</button>
+
+</div>
+
+<script>
+const TOTAL = 13;
+
+const itemTexts = {
+  1:  "Проверка реф значений — RFID аналитика утром, мониторинг остатков и приоритетов",
+  2:  "Проверка расхождения RFID-остатков и фактического наличия в зале",
+  3:  "Топ артикулы по UPT прошлой недели — подготовлен доп вынос быстрого подсорта",
+  4:  "Визуальное пополнение аксессуаров в торговом зале",
+  5:  "Все зоны (тотал луки, имидж) заполнены и выровнены",
+  6:  "Манекены / имидж-зоны укомплектованы аксессуарами согласно луку",
+  7:  "Визуальная проверка вынесенного подсорта — расхождения отработаны, подсорт вынесен, зал пополнен",
+  8:  "Имидж луки — актуальность и полнота",
+  9:  "Шайн аксы — привязка к основным категориям",
+  10: "Утренний бриф: топ-3 артикула дня для допродажи — все сотрудники проинформированы",
+  11: "Обучение сотрудников: знание актуального лука (с чем носить конкретный аксессуар)",
+  12: "Визуальное пополнение аксессуаров после пиковых часов",
+  13: "Повторная проверка RFID после трафика — контроль расхождений"
+};
+
+const sectionItems = { before: [1,2,3,4,5,6,7,8,9], opening: [10,11], day: [12,13] };
+let currentTab = 'before';
+
+// ── State ──
+let state = { checked: {}, comments: {}, meta: {} };
+
+function loadState() {
+  try {
+    const s = localStorage.getItem('upt_checklist_v2');
+    if (s) state = JSON.parse(s);
+  } catch(e) {}
+}
+
+function saveState() {
+  try { localStorage.setItem('upt_checklist_v2', JSON.stringify(state)); } catch(e) {}
+}
+
+// ── Toggle ──
+function toggleItem(id) {
+  state.checked[id] = !state.checked[id];
+  saveState();
+  renderItem(id);
+  updateProgress();
+  renderOpenList();
+}
+
+function renderItem(id) {
+  const card = document.getElementById('card-' + id);
+  if (!card) return;
+  if (state.checked[id]) card.classList.add('checked');
+  else card.classList.remove('checked');
+}
+
+// ── Comment ──
+function saveComment(id, val) {
+  state.comments[id] = val;
+  saveState();
+  renderOpenList();
+}
+
+// ── Meta ──
+function saveMeta() {
+  state.meta = {
+    store:  document.getElementById('meta-store').value,
+    date:   document.getElementById('meta-date').value,
+    person: document.getElementById('meta-person').value,
+    zone:   document.getElementById('meta-zone').value,
+  };
+  saveState();
+}
+
+function renderMeta() {
+  if (!state.meta) return;
+  if (state.meta.store)  document.getElementById('meta-store').value  = state.meta.store;
+  if (state.meta.date)   document.getElementById('meta-date').value   = state.meta.date;
+  if (state.meta.person) document.getElementById('meta-person').value = state.meta.person;
+  if (state.meta.zone)   document.getElementById('meta-zone').value   = state.meta.zone;
+}
+
+// ── Progress ──
+function updateProgress() {
+  const done = Object.values(state.checked).filter(Boolean).length;
+  const pct  = Math.round((done / TOTAL) * 100);
+
+  document.getElementById('pctDisplay').textContent = pct + '%';
+  document.getElementById('pctSub').textContent = done + '/' + TOTAL + ' пунктов';
+
+  const fill = document.getElementById('progressFill');
+  const disp = document.getElementById('pctDisplay');
+  fill.style.width = pct + '%';
+  fill.classList.toggle('done', pct === 100);
+  disp.classList.toggle('done', pct === 100);
+
+  // tab counts
+  Object.entries(sectionItems).forEach(([sec, ids]) => {
+    const secDone = ids.filter(id => state.checked[id]).length;
+    document.getElementById('count-' + sec).textContent = secDone + '/' + ids.length;
+  });
+}
+
+// ── Open list ──
+function renderOpenList() {
+  const open = [];
+  for (let id = 1; id <= TOTAL; id++) {
+    if (!state.checked[id]) open.push(id);
+  }
+  const el = document.getElementById('openList');
+  if (open.length === 0) {
+    el.innerHTML = '<div class="open-empty">✓ Все пункты выполнены</div>';
+  } else {
+    el.innerHTML = open.map(id => {
+      const comment = state.comments[id] ? ` — <em>${state.comments[id]}</em>` : '';
+      return `<div class="open-item"><span class="open-item-num">${String(id).padStart(2,'0')}</span><span>${itemTexts[id]}${comment}</span></div>`;
+    }).join('');
+  }
+}
+
+// ── Tabs ──
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.section-content').forEach(el => el.classList.remove('active'));
+  document.getElementById('section-' + tab).classList.add('active');
+
+  document.querySelectorAll('.tab').forEach(el => {
+    el.className = 'tab';
+  });
+  const activeTab = document.getElementById('tab-' + tab);
+  activeTab.classList.add('active-' + tab);
+}
+
+// ── Copy report ──
+function copyReport() {
+  const m = state.meta || {};
+  const date = m.date ? new Date(m.date).toLocaleDateString('ru-RU') : '—';
+
+  let lines = [];
+  lines.push('📋 ЧЕК-ЛИСТ UPT — LIME');
+  lines.push('─'.repeat(30));
+  lines.push(`🏪 Магазин: ${m.store || '—'}`);
+  lines.push(`📅 Дата: ${date}`);
+  lines.push(`👤 Ответственный: ${m.person || '—'}`);
+  lines.push(`📍 Зона: ${m.zone || '—'}`);
+  lines.push('');
+
+  const done = Object.values(state.checked).filter(Boolean).length;
+  const pct  = Math.round((done / TOTAL) * 100);
+  lines.push(`✅ Выполнено: ${done}/${TOTAL} (${pct}%)`);
+  lines.push('');
+
+  lines.push('ВЫПОЛНЕННЫЕ ПУНКТЫ:');
+  for (let id = 1; id <= TOTAL; id++) {
+    if (state.checked[id]) {
+      const comment = state.comments[id] ? `\n   💬 ${state.comments[id]}` : '';
+      lines.push(`✅ ${String(id).padStart(2,'0')}. ${itemTexts[id]}${comment}`);
+    }
+  }
+
+  lines.push('');
+  const open = [];
+  for (let id = 1; id <= TOTAL; id++) {
+    if (!state.checked[id]) open.push(id);
+  }
+
+  if (open.length > 0) {
+    lines.push('❗ НЕЗАКРЫТЫЕ ПУНКТЫ:');
+    open.forEach(id => {
+      const comment = state.comments[id] ? `\n   💬 ${state.comments[id]}` : '';
+      lines.push(`☐ ${String(id).padStart(2,'0')}. ${itemTexts[id]}${comment}`);
+    });
+  } else {
+    lines.push('✅ Все пункты закрыты');
+  }
+
+  const text = lines.join('\n');
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '✓ СКОПИРОВАНО';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '📋 СКОПИРОВАТЬ ИТОГОВЫЙ ОТЧЁТ';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+// ── Reset ──
+function resetAll() {
+  if (!confirm('Сбросить все галочки и комментарии?')) return;
+  state.checked = {};
+  state.comments = {};
+  saveState();
+  for (let id = 1; id <= TOTAL; id++) {
+    renderItem(id);
+    const ta = document.getElementById('comment-' + id);
+    if (ta) ta.value = '';
+  }
+  updateProgress();
+  renderOpenList();
+}
+
+// ── Init ──
+function init() {
+  loadState();
+  renderMeta();
+
+  // Set today's date if not set
+  if (!state.meta || !state.meta.date) {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('meta-date').value = today;
+  }
+
+  for (let id = 1; id <= TOTAL; id++) {
+    renderItem(id);
+    const ta = document.getElementById('comment-' + id);
+    if (ta && state.comments[id]) ta.value = state.comments[id];
+  }
+  updateProgress();
+  renderOpenList();
+}
+
+init();
+</script>
+</body>
+</html>
